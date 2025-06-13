@@ -2,47 +2,44 @@
 #  libshare is a dirty patch to make LDG compiled against mintlib shareable
 #  by Arnaud BERCEGEAY (Feb 2004)
 
+# raj: add 020 and ColdFire targets
 
-ifeq ($(CROSS),yes)
-CROSSPREFIX = m68k-atari-mint
-CC     = $(CROSSPREFIX)-gcc
-AR     = $(CROSSPREFIX)-ar
-PREFIX = /usr/$(CROSSPREFIX)
-else
-CC     = gcc
-AR     = ar
-PREFIX = /usr
-endif
+CROSSPREFIX=/opt/cross-mint/bin/m68k-atari-mint-
+PATH = /opt/cross-mint/m68k-atari-mint/bin:/opt/cross-mint/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+LD_LIBRARY_PATH=/opt/cross-mint/lib:/opt/cross-mint/m68k-atari-mint/lib:$LD_LIBRARY_PATH
+DESTDIR=/opt/cross-mint/m68k-atari-mint
 
-WARN = \
-        -Wall \
-        -Wmissing-prototypes \
-        -Winline \
-        -Wshadow \
-        -Wpointer-arith \
-        -Wcast-qual \
-        -Waggregate-return
-        
-CFLAGS= -O2 -fomit-frame-pointer $(WARN) $(M68K_ATARI_MINT_CFLAGS)
+CC = $(CROSSPREFIX)gcc
+AS = $(CC)
+AR = $(CROSSPREFIX)ar
+RANLIB = $(CROSSPREFIX)ranlib
+STRIP = $(CROSSPREFIX)strip
+FLAGS = $(CROSSPREFIX)flags
 
-OBJ = libshare.o gl_shm.o calloc.o chdir.o malloc.o realloc.o sbrk.o
+CFLAGS = -Wall -Wno-unused-result
+OFLAGS = -O2 -fomit-frame-pointer
 
-.SUFFIXES:
-.SUFFIXES: .c .S .o
+SRCS = libshare.c gl_shm.c calloc.c chdir.c malloc.c realloc.c sbrk.c
+HDRS = libshare.h lib.h
+OBJS = $(SRCS:.c=.o)
 
-.c.o:
-	$(CC) $(CFLAGS) -c $*.c -o $*.o
-
-TARGET = libshare.a
-HEADERS = libshare.h lib.h
-
-$(TARGET): $(OBJ) $(HEADERS)
-	rm -f $@
-	$(AR) cru $@ $^
-
-install:
-	cp -vf $(TARGET) $(PREFIX)/lib
-	cp -vf libshare.h $(PREFIX)/include
+libshare.a:
+	cp -r $(HDRS) $(DESTDIR)/include
+	$(CC) $(CFLAGS) -m68000 $(OFLAGS) -c $(SRCS)
+	$(AR) -rcs $@ $(OBJS)
+	$(AR) s $@
+	cp libshare.a $(DESTDIR)/lib/libshare.a
+	rm -f *.o libshare.a
+	$(CC) $(CFLAGS) -m68020-60 $(OFLAGS) -c $(SRCS)
+	$(AR) -rcs $@ $(OBJS)
+	$(AR) s $@
+	cp libshare.a $(DESTDIR)/lib/m68020-60/libshare.a
+	rm -f *.o libshare.a
+	$(CC) $(CFLAGS) -mcpu=5475 $(OFLAGS) -c $(SRCS)
+	$(AR) -rcs $@ $(OBJS)
+	$(AR) s $@
+	cp libshare.a $(DESTDIR)/lib/m5475/libshare.a
+	rm -f *.o libshare.a
 
 clean:
-	rm -f *.o
+	rm -f *.o libshare.a
