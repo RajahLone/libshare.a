@@ -58,7 +58,7 @@ int __sbrk_has_been_called = 0;
 
 /* provided for compilers with sizeof(int) == 2 */
 void *
-sbrk (size_t n)
+sbrk (intptr_t n) // raj: fix size_t to intptr_t
 {
 	void *rval;
 	
@@ -79,7 +79,7 @@ sbrk (size_t n)
 			/* now switch over to own heap for further requests,
 			 * including this one */
 			_split_mem = 0;
-			return sbrk (n);
+			return sbrk(n);
 		}
 
 		__set_errno (ENOMEM);
